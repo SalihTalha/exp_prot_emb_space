@@ -53,7 +53,7 @@ def plot_two_heatmaps(vector1, vector2, title1: str, title2: str):
         plt.savefig('foo.png', bbox_inches='tight')
 
 
-def plot_8_heatmaps(tensor, indexes, titles):
+def plot_8_heatmaps(tensor, indexes, titles, filename):
     """
     Plots 8 heatmaps in a grid with 4 rows and 2 columns.
 
@@ -80,7 +80,8 @@ def plot_8_heatmaps(tensor, indexes, titles):
         plt.title = f"Layer: {layer}"
         # Adjust layout and display
         plt.tight_layout()
-        plt.show()
+        plt.savefig(filename)
+        # plt.show()
 
 
 def filter_common_labels(tensor, labels, label_name, label_value):
@@ -105,7 +106,6 @@ def run_all():
     for i in tqdm(common_labels.keys()):
         indexes, titles = [], []
         for j in tqdm(common_labels[i]):
-            filtered_tensor, filtered_negative_tensor = filter_common_labels(tensor, labels, i, j)
             label_name = i
             label_value = j
             positive_indexes = np.array(list(labels[labels[label_name] == label_value].index))
@@ -117,5 +117,5 @@ def run_all():
             indexes.append(negative_indexes)
             titles.append("Negative")
 
-        plot_8_heatmaps(tensor, indexes, titles)
+        plot_8_heatmaps(tensor, indexes, titles, f"results/grandmother_cells/ankh_{i}_gmcells.png")
 
