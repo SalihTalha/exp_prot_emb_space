@@ -71,7 +71,7 @@ def run_all():
             })
 
         df = pd.DataFrame(results)
-        df.to_csv(f"results/acc_ankh_{label_type}_{len(indexes)}.csv")
+        df.to_csv(f"results/similarity/accuracy_plots/acc_ankh_{label_type}_{len(indexes)}.csv")
 
         layers = list(df["layer"])
 
@@ -95,7 +95,7 @@ def run_all():
         plt.tight_layout()
 
         # Save the plot instead of showing it
-        output_path = f"results/accuracies_ankh_{label_type}.png"  # Specify the file name
+        output_path = f"results/similarity/accuracy_plots/accuracies_ankh_{label_type}.png"  # Specify the file name
         plt.savefig(output_path)  # Save with high resolution
         plt.close()  # Close the plot to free memory
     del ankh_embs
@@ -128,7 +128,7 @@ def run_all():
             })
 
         df = pd.DataFrame(results)
-        df.to_csv(f"results/acc_protgpt2_{label_type}_{len(indexes)}.csv")
+        df.to_csv(f"results/similarity/accuracy_plots/acc_protgpt2_{label_type}_{len(indexes)}.csv")
 
         layers = list(df["layer"])
 
@@ -152,7 +152,7 @@ def run_all():
         plt.tight_layout()
 
         # Save the plot instead of showing it
-        output_path = f"results/accuracies_protgpt2_{label_type}.png"  # Specify the file name
+        output_path = f"results/similarity/accuracy_plots/accuracies_protgpt2_{label_type}.png"  # Specify the file name
         plt.savefig(output_path)  # Save with high resolution
         plt.close()  # Close the plot to free memory
 
