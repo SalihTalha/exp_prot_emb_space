@@ -119,3 +119,22 @@ def run_all():
 
         plot_8_heatmaps(tensor, indexes, titles, f"results/grandmother_cells/ankh_{i}_gmcells.png")
 
+    del tensor
+
+    tensor = load_data("protgpt2_merged_tensor.pt")
+
+    for i in tqdm(common_labels.keys()):
+        indexes, titles = [], []
+        for j in tqdm(common_labels[i]):
+            label_name = i
+            label_value = j
+            positive_indexes = np.array(list(labels[labels[label_name] == label_value].index))
+            negative_indexes = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
+            negative_indexes[positive_indexes] = False  # Set False where you want to remove
+
+            indexes.append(positive_indexes)
+            titles.append(f"ProtGPT2 Activations for Label ({i}: {j})")
+            indexes.append(negative_indexes)
+            titles.append("Negative")
+
+        plot_8_heatmaps(tensor, indexes, titles, f"results/grandmother_cells/protgpt2_{i}_gmcells.png")
