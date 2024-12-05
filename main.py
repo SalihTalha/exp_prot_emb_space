@@ -49,12 +49,15 @@
 #
 # plot_both()
 
-# # Grandmother cells for different models/layers/labels
-# from visualizations.grandmother_cells_all import run_all
+# Grandmother cells for different models/layers/labels
+from visualizations.grandmother_cells_all import run_all
+
+run_all()
+
+
+# # Get similarity plots and accuracies for different models/layers/labels
+# from calculations.similarity import run_all
 #
 # run_all()
 
 
-from calculations.similarity import run_all
-
-run_all()
