@@ -53,3 +53,8 @@
 # from visualizations.grandmother_cells_all import run_all
 #
 # run_all()
+
+
+from calculations.similarity import run_all
+
+run_all()
