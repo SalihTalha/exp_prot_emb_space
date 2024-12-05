@@ -19,8 +19,8 @@ def plot_ankh():
     plt.xlabel("Layers")
     plt.ylabel("Intrinsic Dimension")
     plt.grid(True)
-    plt.show()
-
+    plt.savefig("results/intrinsic_dimension/ankh_layers.png")
+    plt.close()
 
 def plot_protgpt2():
     # Plotting the array
@@ -29,7 +29,8 @@ def plot_protgpt2():
     plt.xlabel("Layers")
     plt.ylabel("Intrinsic Dimension")
     plt.grid(True)
-    plt.show()
+    plt.savefig("results/intrinsic_dimension/protgpt2_layers.png")
+    plt.close()
 
 
 def plot_both():
