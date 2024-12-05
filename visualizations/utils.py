@@ -30,12 +30,15 @@ def filter_by_label(labels: pd.DataFrame, label_name: str, label_value: str) -> 
     return list(labels[labels[label_name] == label_value].index)
 
 
-def create_box_plot(arrays, labels, ylabel, title):
+def create_box_plot(arrays, labels, ylabel, title, model_name):
     plt.figure(figsize=(10, 6))
     plt.boxplot(arrays, labels=labels)
     plt.ylabel(ylabel)
     plt.title(title)
-    plt.show()
+    if model_name:
+        plt.savefig("results/intrinsic_dimension/data/" + model_name + ".png")
+    else:
+        plt.show()
 
 
 def load_data(file_name):
