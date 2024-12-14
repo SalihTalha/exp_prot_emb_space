@@ -10,7 +10,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from tqdm import tqdm
 import seaborn as sns
 
-from calculations.utils import load_data, load_labels, common_labels, filter_by_multiple_labels
+from calculations.utils import load_data, load_labels, common_labels, filter_by_multiple_labels, ensure_path_exists
 
 try:
     os.mkdir("results/similarity")
@@ -41,7 +41,29 @@ def calculate_lda(vector, labels, model_name, label_type, layer_number):
     return lda_transformed
 
 
+def ensure_paths():
+    ensure_path_exists("results")
+    ensure_path_exists("results/similarity")
+    ensure_path_exists("results/similarity/accuracy_plots")
+    ensure_path_exists("results/similarity/ankh")
+    ensure_path_exists("results/similarity/ankh/TP")
+    ensure_path_exists("results/similarity/ankh/SF")
+    ensure_path_exists("results/similarity/ankh/CL")
+    ensure_path_exists("results/similarity/ankh/CF")
+    ensure_path_exists("results/similarity/ankh/FA")
+    ensure_path_exists("results/similarity/ankh/vectors")
+    ensure_path_exists("results/similarity/protgpt2")
+    ensure_path_exists("results/similarity/protgpt2/TP")
+    ensure_path_exists("results/similarity/protgpt2/SF")
+    ensure_path_exists("results/similarity/protgpt2/CL")
+    ensure_path_exists("results/similarity/protgpt2/CF")
+    ensure_path_exists("results/similarity/protgpt2/FA")
+    ensure_path_exists("results/similarity/protgpt2/vectors")
+
+
 def run_all():
+    ensure_paths()
+
     all_labels = load_labels()
 
     ankh_embs = load_data("ankh_merged_tensor.pt")

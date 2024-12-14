@@ -27,6 +27,14 @@ def run_for_label_type(label_type: str):  # label_type = TP, CL, CF, SF, FA
     create_box_plot(arrays_protgpt2, common_labels[label_type], "Intrinsic Dimension", f"Intrinsic Dimension using common {label_type} labels and ProtGPT2", model_name=f"protgpt2_{label_type}")
 
 
+def ensure_paths():
+    ensure_path_exists("results")
+    ensure_path_exists("results/intrinsic_dimension")
+    ensure_path_exists("results/intrinsic_dimension/data")
+    ensure_path_exists("results/intrinsic_dimension/layers")
+
+
 def run_all():
+    ensure_paths()
     for i in common_labels.keys():
         run_for_label_type(i)

@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 import torch
@@ -25,8 +27,16 @@ def load_int_dim(data):
     return np.load(f"results/{data}")
 
 
+def ensure_path_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+        print(f"Created path: {path}")
+    else:
+        print(f"Path already exists: {path}")
+
+
 def load_labels():
-    return pd.read_csv("labels.csv")
+    return pd.read_csv("labels_sf.csv")
 
 
 def filter_by_label(labels: pd.DataFrame, label_name: str, label_value: str) -> list:  # return indexes
