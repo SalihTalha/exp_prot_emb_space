@@ -44,14 +44,14 @@
 # run_all()
 
 # # ID Through Layers
-from visualizations.intrinsic_dimension_layers import plot_both
-
-plot_both()
+# from visualizations.intrinsic_dimension_layers import plot_both
+#
+# plot_both()
 
 # Grandmother cells for different models/layers/labels
-# from visualizations.grandmother_cells_all import run_all
-#
-# run_all()
+from visualizations.grandmother_cells_all import run_all
+
+run_all()
 
 
 # Get similarity plots and accuracies for different models/layers/labels

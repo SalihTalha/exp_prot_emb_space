@@ -138,3 +138,5 @@ def run_all():
             titles.append("Negative")
 
         plot_8_heatmaps(tensor, indexes, titles, f"results/grandmother_cells/protgpt2_{i}_gmcells.png")
+
+    del tensor
