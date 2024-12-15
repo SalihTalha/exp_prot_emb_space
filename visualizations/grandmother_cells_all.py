@@ -103,7 +103,7 @@ def run_all():
 
     tensor = load_data("ankh_merged_tensor.pt")
 
-    for i in tqdm(list(common_labels.keys())[-2:-1]):
+    for i in tqdm(list(common_labels.keys())):
         indexes, titles = [], []
         for j in tqdm(common_labels[i]):
             label_name = i
