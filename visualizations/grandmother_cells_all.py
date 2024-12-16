@@ -18,7 +18,7 @@ def filtered_plot(vector, title: str):
     plt.show()
 
 
-def plot_two_heatmaps(vector1, vector2, title1: str, title2: str):
+def plot_two_heatmaps(vector1, vector2, title1: str, title2: str, filename: str):
     """
     Plots two heatmaps side by side for the given vectors.
 
@@ -37,8 +37,8 @@ def plot_two_heatmaps(vector1, vector2, title1: str, title2: str):
         # Calculate vmin and vmax for each vector
         mean_v1 = torch.mean(v1, dim=0)
         mean_v2 = torch.mean(v2, dim=0)
-        vmin1, vmax1 = np.percentile(mean_v1, 0.5), np.percentile(mean_v1, 99.5)
-        vmin2, vmax2 = np.percentile(mean_v2, 0.5), np.percentile(mean_v2, 99.5)
+        vmin1, vmax1 = np.percentile(mean_v1, 1), np.percentile(mean_v1, 99)
+        vmin2, vmax2 = np.percentile(mean_v2, 1), np.percentile(mean_v2, 99)
 
         # Plot the first heatmap
         sns.heatmap(v1, cmap='viridis', ax=axs[0], vmin=vmin1, vmax=vmax1)
@@ -50,7 +50,7 @@ def plot_two_heatmaps(vector1, vector2, title1: str, title2: str):
 
         # Adjust layout and display
         plt.tight_layout()
-        plt.savefig('foo.png', bbox_inches='tight')
+        plt.savefig(filename, bbox_inches='tight')
 
 
 def plot_8_heatmaps(tensor, indexes, titles, filename):
@@ -98,12 +98,12 @@ def filter_common_labels(tensor, labels, label_name, label_value):
     return filtered_tensor, filtered_negative_tensor
 
 
-def run_all():
+def run_all_8():
     labels = load_labels()
 
     tensor = load_data("ankh_merged_tensor.pt")
 
-    for i in tqdm(list(common_labels.keys())[-2:-1]):
+    for i in tqdm(list(common_labels.keys())):
         indexes, titles = [], []
         for j in tqdm(common_labels[i]):
             label_name = i
@@ -140,3 +140,36 @@ def run_all():
         plot_8_heatmaps(tensor, indexes, titles, f"results/grandmother_cells/protgpt2_{i}_gmcells.png")
 
     del tensor
+
+
+def run_all():
+    labels = load_labels()
+
+    tensor = load_data("ankh_merged_tensor.pt")
+
+    for i in tqdm(list(common_labels.keys())):
+        for j in tqdm(common_labels[i]):
+            label_name = i
+            label_value = j
+            positive_indexes = np.array(list(labels[labels[label_name] == label_value].index))
+            negative_indexes = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
+            negative_indexes[positive_indexes] = False  # Set False where you want to remove
+
+            plot_two_heatmaps(tensor[positive_indexes], tensor[negative_indexes], f"ANKH Activations for Label ({i}: {j})", "Negative", f"ANKH_{i}_{j}.png")
+
+    del tensor
+
+    tensor = load_data("protgpt2_merged_tensor.pt")
+
+    for i in tqdm(common_labels.keys()):
+        for j in tqdm(common_labels[i]):
+            label_name = i
+            label_value = j
+            positive_indexes = np.array(list(labels[labels[label_name] == label_value].index))
+            negative_indexes = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
+            negative_indexes[positive_indexes] = False  # Set False where you want to remove
+
+            plot_two_heatmaps(tensor[positive_indexes], tensor[negative_indexes], f"ProtGPT2 Activations for Label ({i}: {j})", "Negative", f"ProtGPT2_{i}_{j}.png")
+
+    del tensor
+
