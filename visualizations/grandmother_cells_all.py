@@ -55,6 +55,9 @@ def plot_two_heatmaps(vector1, vector2, title1: str, title2: str, filename: str)
         fig2.tight_layout()
         fig2.savefig("results/grandmother_cells/" + filename + "_neg.png", bbox_inches='tight')
 
+        fig1.close()
+        fig2.close()
+
 
 def plot_8_heatmaps(tensor, indexes, titles, filename):
     """
@@ -165,6 +168,7 @@ def run_all():
 
     for i in tqdm(list(common_labels.keys())):
         for j in tqdm(common_labels[i]):
+            print(f"Running ANKH model for {i}:{j}")
             label_name = i
             label_value = j
             positive_indexes = np.array(list(labels[labels[label_name] == label_value].index))
@@ -179,6 +183,7 @@ def run_all():
 
     for i in tqdm(common_labels.keys()):
         for j in tqdm(common_labels[i]):
+            print(f"Running ProtGPT2 model for {i}:{j}")
             label_name = i
             label_value = j
             positive_indexes = np.array(list(labels[labels[label_name] == label_value].index))
