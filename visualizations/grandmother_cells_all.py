@@ -55,8 +55,8 @@ def plot_two_heatmaps(vector1, vector2, title1: str, title2: str, filename: str)
         fig2.tight_layout()
         fig2.savefig("results/grandmother_cells/" + filename + "_neg.png", bbox_inches='tight')
 
-        fig1.close()
-        fig2.close()
+        plt.close(fig1)
+        plt.close(fig2)
 
 
 def plot_8_heatmaps(tensor, indexes, titles, filename):
