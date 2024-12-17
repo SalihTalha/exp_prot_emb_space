@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -50,7 +52,7 @@ def plot_two_heatmaps(vector1, vector2, title1: str, title2: str, filename: str)
 
         # Adjust layout and display
         plt.tight_layout()
-        plt.savefig(filename, bbox_inches='tight')
+        plt.savefig("results/grandmother_cells/" + filename, bbox_inches='tight')
 
 
 def plot_8_heatmaps(tensor, indexes, titles, filename):
@@ -141,8 +143,21 @@ def run_all_8():
 
     del tensor
 
+def ensure_path_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+        print(f"Created path: {path}")
+    else:
+        print(f"Path already exists: {path}")
+
+
+def ensure_paths():
+    ensure_path_exists("results/")
+    ensure_path_exists("results/grandmother_cells")
+
 
 def run_all():
+
     labels = load_labels()
 
     tensor = load_data("ankh_merged_tensor.pt")
