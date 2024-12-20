@@ -11,11 +11,11 @@ common_sf_labels = [3000038, 3000313, 3000034, 3000066]  # includes %4.8
 common_fa_labels = [4000029, 4003661, 4001909, 4000229]  # includes %3.3
 
 common_labels = {
-    "TP": common_tp_labels,
     "CL": common_cl_labels,
     "CF": common_cf_labels,
     "SF": common_sf_labels,
     "FA": common_fa_labels,
+    "TP": common_tp_labels,
 }
 
 

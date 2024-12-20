@@ -75,11 +75,11 @@ common_fa_labels = [4000029, 4003661, 4001909, 4000229]  # includes %3.3
 
 
 common_labels = {
-    "TP": common_tp_labels,
     "CL": common_cl_labels,
     "CF": common_cf_labels,
     "SF": common_sf_labels,
     "FA": common_fa_labels,
+    "TP": common_tp_labels,
 }
 
 def load_int_dim(data):
