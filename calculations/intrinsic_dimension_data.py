@@ -10,6 +10,8 @@ def two_nn_intrinsic_dimension(data):
     return intrinsic_dim
 
 
+# def # new intrinsic dimension algo
+
 def calculate(tensor):
     int_dim_data_points = []
 

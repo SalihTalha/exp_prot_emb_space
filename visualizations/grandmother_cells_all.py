@@ -20,7 +20,7 @@ def filtered_plot(vector, title: str):
     plt.show()
 
 
-def plot_two_heatmaps(vector1, vector2, title1: str, title2: str, filename: str):
+def plot_two_heatmaps(vector1, vector2, title: str, model_name: str, label_name: str, label_value: str):
     """
     Plots two heatmaps side by side for the given vectors.
 
@@ -30,33 +30,47 @@ def plot_two_heatmaps(vector1, vector2, title1: str, title2: str, filename: str)
         title1 (str): Title for the first heatmap.
         title2 (str): Title for the second heatmap.
     """
-    # Create subplots
-    for layer in range(vector1.shape[1]):
-        v1 = vector1[:, layer, :]
-        v2 = vector2[:, layer, :]
+    # n_data = 1000
+    q = 1
+    for q in [1,2,3]:
+        ensure_path_exists(f"results/grandmother_cells_all_{str(q)}/{model_name}/{label_name}/{label_value}/")
+        # Create subplots
+        for layer in tqdm(range(vector1.shape[1])):
 
-        # Calculate vmin and vmax for each vector
-        mean_v1 = torch.mean(v1, dim=0)
-        mean_v2 = torch.mean(v2, dim=0)
-        vmin1, vmax1 = np.percentile(mean_v1, 1), np.percentile(mean_v1, 99)
-        vmin2, vmax2 = np.percentile(mean_v2, 1), np.percentile(mean_v2, 99)
+            v1 = vector1[:, layer, :]
+            # v2 = vector2[:100, layer, :]
+            # v3 = v1 - v2
+            # Calculate vmin and vmax for each vector
+            # mean_v1 = torch.mean(v1, dim=0)
+            # mean_v2 = torch.mean(v2, dim=0)
+            # mean_v3 = torch.mean(v1 - v2, dim=0)
+            vmin1, vmax1 = np.percentile(v1, q), np.percentile(v1, 100-q)
+            # vmin2, vmax2 = np.percentile(v2, 0.5), np.percentile(v2, 99.5)
+            # vmin3, vmax3 = np.percentile(v3, 0.5), np.percentile(v3, 99.5)
 
-        # Plot and save the first heatmap
-        fig1, ax1 = plt.subplots(figsize=(7, 6))
-        sns.heatmap(v1, cmap='viridis', ax=ax1, vmin=vmin1, vmax=vmax1)
-        ax1.set_title(title1)
-        fig1.tight_layout()
-        fig1.savefig("results/grandmother_cells/" + filename + "_pos.png", bbox_inches='tight')
+            # Plot and save the first heatmap
+            fig1, ax1 = plt.subplots(figsize=(7, 6))
+            sns.heatmap(v1, cmap='viridis', ax=ax1, vmin=vmin1, vmax=vmax1)
+            ax1.set_title(title + " Positive")
+            fig1.tight_layout()
+            fig1.savefig(f"results/grandmother_cells_all_{str(q)}/{model_name}/{label_name}/{label_value}/{str(layer)}_pos.png", bbox_inches='tight')
 
-        # Plot and save the second heatmap
-        fig2, ax2 = plt.subplots(figsize=(7, 6))
-        sns.heatmap(v2, cmap='viridis', ax=ax2, vmin=vmin2, vmax=vmax2)
-        ax2.set_title(title2)
-        fig2.tight_layout()
-        fig2.savefig("results/grandmother_cells/" + filename + "_neg.png", bbox_inches='tight')
+            # # Plot and save the second heatmap
+            # fig2, ax2 = plt.subplots(figsize=(7, 6))
+            # sns.heatmap(v2, cmap='viridis', ax=ax2, vmin=vmin2, vmax=vmax2)
+            # ax2.set_title(title + " Negative")
+            # fig2.tight_layout()
+            # fig2.savefig(f"results/grandmother_cells_{n_data}_{str(q)}/{model_name}/{label_name}/{label_value}/{str(layer)}_neg.png", bbox_inches='tight')
+            #
+            # fig3, ax3 = plt.subplots(figsize=(7, 6))
+            # sns.heatmap(v3, cmap='viridis', ax=ax3, vmin=vmin3, vmax=vmax3)
+            # ax3.set_title(title + " Difference")
+            # fig3.tight_layout()
+            # fig3.savefig(f"results/grandmother_cells_{n_data}_{str(q)}/{model_name}/{label_name}/{label_value}/{str(layer)}_diff.png", bbox_inches='tight')
 
-        plt.close(fig1)
-        plt.close(fig2)
+            plt.close(fig1)
+            # plt.close(fig2)
+            # plt.close(fig3)
 
 
 def plot_8_heatmaps(tensor, indexes, titles, filename):
@@ -172,10 +186,10 @@ def run_all():
             label_name = i
             label_value = j
             positive_indexes = np.array(list(labels[labels[label_name] == label_value].index))
-            negative_indexes = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
-            negative_indexes[positive_indexes] = False  # Set False where you want to remove
-
-            plot_two_heatmaps(tensor[positive_indexes], tensor[negative_indexes], f"ANKH Activations for Label ({i}: {j}) Positive", f"ANKH Activations for Label ({i}: {j}) Negative", f"ANKH_{i}_{j}.png")
+            # negative_indexes = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
+            # negative_indexes[positive_indexes] = False  # Set False where you want to remove
+            # vector2 = tensor[negative_indexes]
+            plot_two_heatmaps(tensor[positive_indexes], None, f"ANKH Activations for Label ({i}: {j})", "ANKH", i, j)
 
     del tensor
 
@@ -190,7 +204,7 @@ def run_all():
             negative_indexes = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
             negative_indexes[positive_indexes] = False  # Set False where you want to remove
 
-            plot_two_heatmaps(tensor[positive_indexes], tensor[negative_indexes], f"ProtGPT2 Activations for Label ({i}: {j}) Positive", f"ProtGPT2 Activations for Label ({i}: {j}) Negative", f"ANKH_{i}_{j}.png")
+            plot_two_heatmaps(tensor[positive_indexes], tensor[negative_indexes], f"ProtGPT2 Activations for Label ({i}: {j})", "ProtGPT2", i, j)
 
     del tensor
 
