@@ -1,3 +1,5 @@
+import pandas as pd
+
 import streamlit as st
 import numpy as np
 import plotly.express as px
@@ -24,8 +26,85 @@ st.set_page_config(
 
 )
 
+
+def run_label_analysis():
+    # 1) Load the entire dataset (no filtering by label_name/label_value)
+    #    but slice out the chosen neuron (neuron_index).
+    dataset = load_dataset(
+        dataset_name="ESM2",  # or "ANKH"/"ProtGPT2"/ etc.
+        label_name=None,
+        label_value=None,
+        reverse_filter=False,
+        layer=layer,
+        size_limit=40000,  # pick a large enough number or remove if you don't want a limit
+        neuron=neuron_index
+    )
+    # dataset shape is now [N, seq_len] if 'neuron' was given.
+
+    # 2) For each sample i, compute fraction of positions > min_value
+    num_samples = dataset.shape[0]
+    seq_len = dataset.shape[1]
+    dataset_np = dataset.numpy()  # easier to handle in numpy
+
+    # We'll group by (label_id, label_type) or whatever you have in your `labels` DF.
+    grouped_data = {}
+
+    for i in range(num_samples):
+        # Example columns: adjust to match your real DataFrame
+        label_id = labels.iloc[i]["label_id"]  # e.g. 1,2,3,...
+        label_type = labels.iloc[i]["label_type"]  # e.g. "TP","CF","..."
+
+        count_above = (dataset_np[i] > min_value).sum()
+        fraction_above = count_above / seq_len
+
+        key = (label_id, label_type)
+        if key not in grouped_data:
+            grouped_data[key] = []
+        grouped_data[key].append(fraction_above)
+
+    # 3) Compute average fraction for each group, then compare to percentage_threshold
+    results = []
+    for (label_id, label_type), fractions in grouped_data.items():
+        mean_fraction = sum(fractions) / len(fractions)
+        percentage_val = mean_fraction * 100
+        results.append({
+            "label_id": label_id,
+            "label_type": label_type,
+            "mean_fraction": mean_fraction,
+            "percentage": percentage_val,
+            "sample_count": len(fractions)
+        })
+
+    results_df = pd.DataFrame(results)
+
+    # Add a 'group' column: "HIGH" or "LOW"
+    results_df["group"] = results_df["percentage"].apply(
+        lambda x: "HIGH" if x >= percentage_threshold else "LOW"
+    )
+
+    # 4) Print summary: number of labels in high vs low group
+    high_count = sum(results_df["group"] == "HIGH")
+    low_count = sum(results_df["group"] == "LOW")
+
+    st.subheader("Label Grouping Summary")
+    st.write(f"Number of HIGH labels: {high_count}")
+    st.write(f"Number of LOW labels: {low_count}")
+
+    # Show highest and lowest percentages
+    results_df = results_df.sort_values(by="percentage", ascending=False)
+
+    st.write("### Highest Percentage Labels")
+    st.dataframe(results_df.head(5))
+
+    st.write("### Lowest Percentage Labels")
+    st.dataframe(results_df.tail(5))
+
+    # If you want to show everything:
+    # st.dataframe(results_df.reset_index(drop=True))
+
+
 @st.cache_data
-def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_filter: bool, size_limit=1000, neuron=None) -> np.ndarray:
+def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_filter: bool, size_limit=1000, neuron=None, layer=0) -> np.ndarray:
     """
     Returns a matrix (2D NumPy array) for the given dataset name.
     Replace these examples with your actual data-loading logic.
@@ -33,8 +112,9 @@ def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_f
 
     if dataset_name == "ANKH":
         tensor = torch.load(f"./final_embeddings/ankh_merged_tensor.pt", map_location=torch.device('cpu'))
+        tensor = tensor[:, layer, :]
         if neuron:
-            tensor = tensor[:, :, neuron]
+            tensor = tensor[:, neuron]
         indexes = list(labels[labels[label_name] == label_value].index)
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
@@ -44,8 +124,9 @@ def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_f
         return tensor[indexes][:size_limit]
     elif dataset_name == "ProtGPT2":
         tensor = torch.load(f"./final_embeddings/protgpt2_merged_tensor.pt", map_location=torch.device('cpu'))
+        tensor = tensor[:, layer, :]
         if neuron:
-            tensor = tensor[:, :, neuron]
+            tensor = tensor[:, neuron]
         indexes = list(labels[labels[label_name] == label_value].index)
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
@@ -55,8 +136,9 @@ def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_f
         return tensor[indexes][:size_limit]
     elif dataset_name == "ESM2":
         tensor = torch.load(f"./final_embeddings/esm2_merged_tensor.pt", map_location=torch.device('cpu'))
+        tensor = tensor[:, layer, :]
         if neuron:
-            tensor = tensor[:, :, neuron]
+            tensor = tensor[:, neuron]
         indexes = list(labels[labels[label_name] == label_value].index)
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
@@ -133,14 +215,18 @@ if "layer" not in st.session_state:
 
 # 5. Button to plot the heatmap
 if st.button("Plot Heatmap") or st.session_state.data is not None:
-    st.session_state.data = load_dataset(dataset_name, label_column, label_value, reverse_filter)[:data_limit, :, :]
+    # Create two columns: col1 is wide, col2 is narrow (just an example ratio)
+    col1, col2 = st.columns([3, 1])
+
+    # In column 1: generate and show a plot
+    st.session_state.data = load_dataset(dataset_name, label_column, label_value, reverse_filter, layer=layer)[:data_limit]
 
     # Access stored data
     data = st.session_state.data
 
     # 3. Determine min/max of the data, for slider guidance
-    data_min, data_max = np.percentile(data[:, layer, :], 0.5), np.percentile(data[:, layer, :], 99.5) # 5000, 8000
-    data_minm, data_maxm = np.percentile(data[:, layer, :], 0), np.percentile(data[:, layer, :], 100)
+    data_min, data_max = np.percentile(data, 0.5), np.percentile(data, 99.5)  # 5000, 8000
+    data_minm, data_maxm = np.percentile(data, 0), np.percentile(data, 100)
 
     st.write(f"**Selected dataset**: {dataset_name} — shape: {data.shape}")
     st.write(f"**Label column**: {label_column}, **Label value**: {label_value}")
@@ -158,39 +244,72 @@ if st.button("Plot Heatmap") or st.session_state.data is not None:
         step=0.1  # Increment step for float values
     )
 
-    data = data * ((data >= data_max) | (data <= data_min)).float()
+    # data = data * ((data >= data_max) | (data <= data_min)).float()
 
-    if vmin > vmax:
-        st.warning("vmin is greater than vmax. Please adjust the sliders.")
-    else:
-        fig = px.imshow(
-            data[:, layer, :],
-            zmin=vmin,
-            zmax=vmax,
-            color_continuous_scale="RdBu_r",
-            aspect="auto"  # Keeps cells from getting too stretched
-        )
-
-        # Configure Plotly layout
-        fig.update_layout(
-            dragmode="zoom",
-            margin=dict(l=40, r=40, t=40, b=40),
-            xaxis_title=f"Neurons",
-            yaxis_title=f"Data Points of {label_column}:{label_value}",
-            title=f"Heatmap of {dataset_name} Activations on {layer}. Layer" # & Exclude: {reverse_filter}
-        )
-
-        # fig.update_xaxes(range=[100, 150])
-
-        # Display the figure
-        st.plotly_chart(fig, use_container_width=True)
-
-        if st.button("Download High-Resolution PNG"):
-            # Convert to high-res PNG
-            img_bytes = fig.to_image(format="png", scale=4.5)  # Adjust scale for higher resolution
-            st.download_button(
-                label="Download Image",
-                data=img_bytes,
-                file_name="heatmap.png",
-                mime="image/png"
+    with col1:
+        if vmin > vmax:
+            st.warning("vmin is greater than vmax. Please adjust the sliders.")
+        else:
+            fig = px.imshow(
+                data,
+                zmin=vmin,
+                zmax=vmax,
+                color_continuous_scale="RdBu_r",
+                aspect="auto"  # Keeps cells from getting too stretched
             )
+
+            # Configure Plotly layout
+            fig.update_layout(
+                dragmode="zoom",
+                margin=dict(l=40, r=40, t=40, b=40),
+                xaxis_title=f"Neurons",
+                yaxis_title=f"Data Points of {label_column}:{label_value}",
+                title=f"Heatmap of {dataset_name} Activations on {layer}. Layer" # & Exclude: {reverse_filter}
+            )
+
+            # fig.update_xaxes(range=[100, 150])
+
+            # Display the figure
+            st.plotly_chart(fig, use_container_width=True)
+
+            if st.button("Download High-Resolution PNG"):
+                # Convert to high-res PNG
+                img_bytes = fig.to_image(format="png", scale=4.5)  # Adjust scale for higher resolution
+                st.download_button(
+                    label="Download Image",
+                    data=img_bytes,
+                    file_name="heatmap.png",
+                    mime="image/png"
+                )
+
+    with col2:
+        neuron_index = st.number_input(
+            label="Neuron Index",
+            min_value=0,
+            value=0,
+            step=1,
+            help="Neuron index you want to analyze"
+        )
+
+        # 2) Numeric input for the activation threshold (min_value)
+        min_value = st.number_input(
+            label="Min Activation Value",
+            value=0.0,
+            step=0.1,
+            help="Count positions above this activation"
+        )
+
+        # 3) Percentage threshold
+        percentage_threshold = st.slider(
+            label="Percentage threshold (0-100)",
+            min_value=0,
+            max_value=100,
+            value=50,
+            help="Labels with fraction of positions above min_value exceeding this threshold are 'HIGH'"
+        )
+
+        # 4) Button
+        run_button = st.button("Run Analysis")
+
+        if run_button:
+            run_label_analysis()
