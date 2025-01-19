@@ -1,2 +1,4 @@
 final_embeddings
 /results/similarity/lda_vectors/
+visualizations/identity_matrix_mmseq2.npy
+visualizations/distance_matrix_mean.npy

@@ -1,0 +1,10 @@
+[theme]
+base = "light"
+
+[browser]
+gatherUsageStats = false
+layout = "wide"
+
+[server]
+runOnSave = true
+maxMessageSize = 300
