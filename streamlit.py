@@ -25,7 +25,7 @@ st.set_page_config(
 )
 
 @st.cache_data
-def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_filter: bool) -> np.ndarray:
+def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_filter: bool, size_limit=1000, neuron=None) -> np.ndarray:
     """
     Returns a matrix (2D NumPy array) for the given dataset name.
     Replace these examples with your actual data-loading logic.
@@ -33,31 +33,37 @@ def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_f
 
     if dataset_name == "ANKH":
         tensor = torch.load(f"./final_embeddings/ankh_merged_tensor.pt", map_location=torch.device('cpu'))
+        if neuron:
+            tensor = tensor[:, :, neuron]
         indexes = list(labels[labels[label_name] == label_value].index)
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
             mask[indexes] = False  # Set False where you want to remove
             # Select only the rows you want to keep
-            return tensor[mask][:1000]
-        return tensor[indexes][:1000]
+            return tensor[mask][:size_limit]
+        return tensor[indexes][:size_limit]
     elif dataset_name == "ProtGPT2":
         tensor = torch.load(f"./final_embeddings/protgpt2_merged_tensor.pt", map_location=torch.device('cpu'))
+        if neuron:
+            tensor = tensor[:, :, neuron]
         indexes = list(labels[labels[label_name] == label_value].index)
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
             mask[indexes] = False  # Set False where you want to remove
             # Select only the rows you want to keep
-            return tensor[mask][:1000]
-        return tensor[indexes][:1000]
+            return tensor[mask][:size_limit]
+        return tensor[indexes][:size_limit]
     elif dataset_name == "ESM2":
         tensor = torch.load(f"./final_embeddings/esm2_merged_tensor.pt", map_location=torch.device('cpu'))
+        if neuron:
+            tensor = tensor[:, :, neuron]
         indexes = list(labels[labels[label_name] == label_value].index)
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
             mask[indexes] = False  # Set False where you want to remove
             # Select only the rows you want to keep
-            return tensor[mask][:1000]
-        return tensor[indexes][:1000]
+            return tensor[mask][:size_limit]
+        return tensor[indexes][:size_limit]
     else:
         # Default case or raise an error
         raise ValueError(f"Unknown dataset name: {dataset_name}")
