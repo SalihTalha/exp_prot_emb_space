@@ -1,4 +1,4 @@
-from .utils import common_labels, load_labels
+from .utils import common_labels, load_labels, get_seq_lens
 import pandas as pd
 import matplotlib.pyplot as plt
 from Bio import SeqIO

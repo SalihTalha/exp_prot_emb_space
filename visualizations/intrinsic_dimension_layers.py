@@ -1,5 +1,7 @@
 import numpy as np
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
 
 def read_results():
@@ -63,9 +65,23 @@ def plot_esm2(esm2_res, filtered=False):
 def plot_all():
     ankh_res, protgpt2_res, esm2_res = read_results()
 
-    plot_ankh(ankh_res)
-    plot_protgpt2(protgpt2_res)
-    plot_esm2(esm2_res)
+    # plot_ankh(ankh_res)
+    # plot_protgpt2(protgpt2_res)
+    # plot_esm2(esm2_res)
+
+    # Example data for intrinsic dimensions
+    plt.plot(ankh_res, label="ANKH")
+    plt.plot(esm2_res, label="ESM2")
+    plt.plot(protgpt2_res, label="ProtGPT2")
+    # Add labels and a legend
+    plt.title('Intrinsic Dimensions Across Layers')
+    plt.xlabel('Layers')
+    plt.ylabel('Intrinsic Dimension')
+    plt.legend(title='Model')
+    plt.grid(True)
+
+    # Show the plot
+    plt.savefig("results/intrinsic_dimension/layers/all.png")
 
 
 def plot_all_filtered():

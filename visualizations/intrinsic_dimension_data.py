@@ -41,3 +41,46 @@ def run_all():
     ensure_paths()
     for i in common_labels.keys():
         run_for_label_type(i)
+
+
+def intrinsic_dim_2nn_from_dist_matrix(D):
+    """
+    Compute the local 2-Nearest-Neighbors (2NN) intrinsic dimensionality
+    for each point, given a distance matrix D.
+
+    Parameters
+    ----------
+    D : ndarray of shape (n_samples, n_samples)
+        Distance matrix where D[i, j] is the distance from point i to point j.
+        We expect D[i, i] = 0 (distance to itself).
+
+    Returns
+    -------
+    local_id : ndarray of shape (n_samples,)
+        The 2NN intrinsic dimension estimates for each sample.
+    """
+    n = D.shape[0]
+    local_id = np.zeros(n, dtype=float)
+
+    for i in range(n):
+        # Extract distances from point i to others
+        # Ignore the diagonal (distance to itself = 0), we don't consider that a neighbor.
+        row = D[i].copy()
+        row[i] = np.inf  # So it doesn't get chosen as a "neighbor"
+
+        # Sort distances in ascending order
+        sorted_dists = np.sort(row)
+
+        # The 1st neighbor distance (r1) is the smallest non-diagonal distance
+        r1 = sorted_dists[0]
+        # The 2nd neighbor distance (r2) is the second-smallest
+        r2 = sorted_dists[1]
+
+        # Compute the 2NN local ID = ln(2) / ln(r2 / r1)
+        # Watch out for numerical issues: 0 distances, identical distances, etc.
+        if r1 <= 0 or r2 <= 0 or r2 == r1:
+            local_id[i] = np.nan
+        else:
+            local_id[i] = np.log(2.0) / np.log(r2 / r1)
+
+    return local_id

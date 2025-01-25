@@ -51,19 +51,19 @@ def run_all():
     # del tensor
 
     tensor = load_data("esm2_merged_tensor.pt")
-    res = calculate_filtered(tensor)
+    res = calculate(tensor)
     res = np.array(res)
-    np.save("results/int_dim_filtered_layers_esm2.npy", res)
+    np.save("results/int_dim_layers_esm2.npy", res)
     del tensor
 
-    tensor = load_data("ankh_merged_tensor.pt")
-    res = calculate_filtered(tensor)
-    res = np.array(res)
-    np.save("results/int_dim_filtered_layers_ankh.npy", res)
-    del tensor
-
-    tensor = load_data("protgpt2_merged_tensor.pt")
-    res = calculate_filtered(tensor)
-    res = np.array(res)
-    np.save("results/int_dim_filtered_layers_protgpt2.npy", res)
-    del tensor
+    # tensor = load_data("ankh_merged_tensor.pt")
+    # res = calculate_filtered(tensor)
+    # res = np.array(res)
+    # np.save("results/int_dim_filtered_layers_ankh.npy", res)
+    # del tensor
+    #
+    # tensor = load_data("protgpt2_merged_tensor.pt")
+    # res = calculate_filtered(tensor)
+    # res = np.array(res)
+    # np.save("results/int_dim_filtered_layers_protgpt2.npy", res)
+    # del tensor

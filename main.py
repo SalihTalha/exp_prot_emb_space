@@ -48,7 +48,7 @@
 
 
 
-#
+
 # from calculations.intrinsic_dimension_layers import run_all
 #
 # run_all()
@@ -66,9 +66,9 @@
 
 
 # Get similarity plots and accuracies for different models/layers/labels
-from calculations.similarity import run_all
-
-run_all()
+# from calculations.similarity import run_all
+#
+# run_all()
 
 
 # from calculations.pca import run_all

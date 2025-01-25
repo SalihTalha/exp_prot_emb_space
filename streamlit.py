@@ -1,19 +1,14 @@
 import pandas as pd
-
 import streamlit as st
-import numpy as np
 import plotly.express as px
 import os
-
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
 import torch
-from tqdm import tqdm
 
-from visualizations.utils import load_labels, load_data, common_labels
+from visualizations.utils import load_labels, load_data, common_labels, get_seq_lens, get_label_name
 
 labels = load_labels().drop(["Unnamed: 0"], axis=1)
+seq_lengths = np.array(get_seq_lens())
 
 os.environ["STREAMLIT_SERVER_MAXMESSAGESIZE"] = "300"  # Max message size in MB
 os.environ["STREAMLIT_SERVER_RUNONSAVE"] = "true"     # Enable run on save
@@ -31,7 +26,7 @@ def run_label_analysis():
     # 1) Load the entire dataset (no filtering by label_name/label_value)
     #    but slice out the chosen neuron (neuron_index).
     dataset = load_dataset(
-        dataset_name="ESM2",  # or "ANKH"/"ProtGPT2"/ etc.
+        dataset_name=dataset_name,  # or "ANKH"/"ProtGPT2"/ etc.
         label_name=None,
         label_value=None,
         reverse_filter=False,
@@ -42,65 +37,65 @@ def run_label_analysis():
     # dataset shape is now [N, seq_len] if 'neuron' was given.
 
     # 2) For each sample i, compute fraction of positions > min_value
-    num_samples = dataset.shape[0]
-    seq_len = dataset.shape[1]
     dataset_np = dataset.numpy()  # easier to handle in numpy
-
-    # We'll group by (label_id, label_type) or whatever you have in your `labels` DF.
-    grouped_data = {}
-
-    for i in range(num_samples):
-        # Example columns: adjust to match your real DataFrame
-        label_id = labels.iloc[i]["label_id"]  # e.g. 1,2,3,...
-        label_type = labels.iloc[i]["label_type"]  # e.g. "TP","CF","..."
-
-        count_above = (dataset_np[i] > min_value).sum()
-        fraction_above = count_above / seq_len
-
-        key = (label_id, label_type)
-        if key not in grouped_data:
-            grouped_data[key] = []
-        grouped_data[key].append(fraction_above)
-
-    # 3) Compute average fraction for each group, then compare to percentage_threshold
     results = []
-    for (label_id, label_type), fractions in grouped_data.items():
-        mean_fraction = sum(fractions) / len(fractions)
-        percentage_val = mean_fraction * 100
-        results.append({
-            "label_id": label_id,
-            "label_type": label_type,
-            "mean_fraction": mean_fraction,
-            "percentage": percentage_val,
-            "sample_count": len(fractions)
-        })
+
+    for label_col in labels.columns:
+        for unique_label in labels[label_col].unique():
+            idx = labels[labels[label_col] == unique_label].index
+
+            if len(idx) < 10:
+                # No samples have this label => skip
+                continue
+
+            # 4) Extract the activations for these indices
+            group_data = dataset_np[idx]  # shape => [g, seq_len], where g is # of samples
+
+            count_above = np.sum(group_data > max_value) + np.sum(group_data < min_value)
+            total_positions = group_data.size
+            fraction = count_above / total_positions
+            percentage = fraction * 100
+
+            # 5) Compare to your percentage_threshold
+            group_label = "OUTLIER" if percentage >= percentage_threshold else "NON-OUTLIER"
+
+            # Save results
+            results.append({
+                "label_column": label_col,
+                "label_value": unique_label,
+                "label_name": get_label_name(unique_label),
+                "count_samples_in_group": len(idx),
+                "percentage_above_min_value": percentage,
+                "mean_sequence_lengths": np.mean(seq_lengths[idx]),
+                "mean_activation": np.mean(group_data),
+                "group": group_label,
+            })
+
 
     results_df = pd.DataFrame(results)
+    results_df["label_value"] = results_df["label_value"].astype(str)
 
-    # Add a 'group' column: "HIGH" or "LOW"
-    results_df["group"] = results_df["percentage"].apply(
-        lambda x: "HIGH" if x >= percentage_threshold else "LOW"
-    )
+    # Sort by percentage descending
+    results_df.sort_values(by="percentage_above_min_value", ascending=False, inplace=True)
 
-    # 4) Print summary: number of labels in high vs low group
-    high_count = sum(results_df["group"] == "HIGH")
-    low_count = sum(results_df["group"] == "LOW")
-
+    # Show the summary
     st.subheader("Label Grouping Summary")
-    st.write(f"Number of HIGH labels: {high_count}")
-    st.write(f"Number of LOW labels: {low_count}")
 
-    # Show highest and lowest percentages
-    results_df = results_df.sort_values(by="percentage", ascending=False)
+    # Example: number of HIGH vs LOW across *all* columns
+    high_count = sum(results_df["group"] == "OUTLIER")
+    low_count = sum(results_df["group"] == "NON-OUTLIER")
+    st.write(f"Number of OUTLIER labels (all columns combined): {high_count}")
+    st.write(f"Number of NON-OUTLIER labels (all columns combined): {low_count}")
 
-    st.write("### Highest Percentage Labels")
-    st.dataframe(results_df.head(5))
+    # Show top 5 and bottom 5
+    st.write("### OUTLIERS Percentage Dataframe")
+    st.dataframe(results_df[results_df["group"] == "OUTLIER"])
 
-    st.write("### Lowest Percentage Labels")
-    st.dataframe(results_df.tail(5))
+    st.write("### NON-OUTLIERS Percentage Dataframe")
+    st.dataframe(results_df[results_df["group"] == "NON-OUTLIER"])
 
-    # If you want to show everything:
-    # st.dataframe(results_df.reset_index(drop=True))
+    # results_df.to_csv(f"results_{datetime.datetime.now()}.csv")
+
 
 
 @st.cache_data
@@ -115,7 +110,10 @@ def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_f
         tensor = tensor[:, layer, :]
         if neuron:
             tensor = tensor[:, neuron]
-        indexes = list(labels[labels[label_name] == label_value].index)
+        if label_name and label_value:
+            indexes = list(labels[labels[label_name] == label_value].index)
+        else:
+            indexes = range(len(tensor))
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
             mask[indexes] = False  # Set False where you want to remove
@@ -127,7 +125,10 @@ def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_f
         tensor = tensor[:, layer, :]
         if neuron:
             tensor = tensor[:, neuron]
-        indexes = list(labels[labels[label_name] == label_value].index)
+        if label_name and label_value:
+            indexes = list(labels[labels[label_name] == label_value].index)
+        else:
+            indexes = range(len(tensor))
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
             mask[indexes] = False  # Set False where you want to remove
@@ -137,9 +138,14 @@ def load_dataset(dataset_name: str, label_name: str, label_value: str, reverse_f
     elif dataset_name == "ESM2":
         tensor = torch.load(f"./final_embeddings/esm2_merged_tensor.pt", map_location=torch.device('cpu'))
         tensor = tensor[:, layer, :]
+        print(tensor.shape)
         if neuron:
             tensor = tensor[:, neuron]
-        indexes = list(labels[labels[label_name] == label_value].index)
+            print(tensor.shape)
+        if label_name and label_value:
+            indexes = list(labels[labels[label_name] == label_value].index)
+        else:
+            indexes = range(len(tensor))
         if reverse_filter:
             mask = torch.ones(tensor.size(0), dtype=torch.bool)  # Initialize all True
             mask[indexes] = False  # Set False where you want to remove
@@ -190,7 +196,7 @@ label_value = st.selectbox("Select label value:", possible_values_for_column)
 layer = st.slider(
     "Layer",
     min_value=0,  # a rough lower limit
-    max_value= layer_counts[dataset_name],  # a rough upper limit
+    max_value=layer_counts[dataset_name],  # a rough upper limit
     value=0,
     step=1
 )
@@ -215,9 +221,6 @@ if "layer" not in st.session_state:
 
 # 5. Button to plot the heatmap
 if st.button("Plot Heatmap") or st.session_state.data is not None:
-    # Create two columns: col1 is wide, col2 is narrow (just an example ratio)
-    col1, col2 = st.columns([3, 1])
-
     # In column 1: generate and show a plot
     st.session_state.data = load_dataset(dataset_name, label_column, label_value, reverse_filter, layer=layer)[:data_limit]
 
@@ -245,6 +248,9 @@ if st.button("Plot Heatmap") or st.session_state.data is not None:
     )
 
     # data = data * ((data >= data_max) | (data <= data_min)).float()
+
+    # Create two columns: col1 is wide, col2 is narrow (just an example ratio)
+    col1, col2 = st.columns([3, 1])
 
     with col1:
         if vmin > vmax:
@@ -296,6 +302,13 @@ if st.button("Plot Heatmap") or st.session_state.data is not None:
             label="Min Activation Value",
             value=0.0,
             step=0.1,
+            help="Count positions below this activation"
+        )
+
+        max_value = st.number_input(
+            label="Max Activation Value",
+            value=0.0,
+            step=0.1,
             help="Count positions above this activation"
         )
 
@@ -311,5 +324,5 @@ if st.button("Plot Heatmap") or st.session_state.data is not None:
         # 4) Button
         run_button = st.button("Run Analysis")
 
-        if run_button:
-            run_label_analysis()
+    if run_button:
+        run_label_analysis()
