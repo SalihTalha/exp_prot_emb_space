@@ -22,10 +22,36 @@ st.set_page_config(
 )
 
 
+def normalize_matrix_to_percentage(matrix):
+    return matrix
+    """
+    Normalizes the input matrix so that its total sum equals 100,
+    while maintaining the proportions of the original matrix.
+
+    Parameters:
+    - matrix: A list of lists or a NumPy array representing the matrix.
+
+    Returns:
+    - A NumPy array where the sum of all elements is 100.
+    """
+    # Convert the matrix to a NumPy array (if it isn't already)
+    matrix = np.array(matrix, dtype=float)
+
+    # Compute the total sum of the matrix elements
+    total = np.sum(matrix)
+
+    if total == 0:
+        raise ValueError("The sum of the matrix elements is 0; cannot normalize.")
+
+    # Normalize so that the sum becomes 100
+    probability_matrix = (matrix / total) * 100
+    return probability_matrix
+
+
 def run_label_analysis():
     # 1) Load the entire dataset (no filtering by label_name/label_value)
     #    but slice out the chosen neuron (neuron_index).
-    dataset = load_dataset(
+    dataset = normalize_matrix_to_percentage(load_dataset(
         dataset_name=dataset_name,  # or "ANKH"/"ProtGPT2"/ etc.
         label_name=None,
         label_value=None,
@@ -33,7 +59,7 @@ def run_label_analysis():
         layer=layer,
         size_limit=40000,  # pick a large enough number or remove if you don't want a limit
         neuron=neuron_index
-    )
+    ))
     # dataset shape is now [N, seq_len] if 'neuron' was given.
 
     # 2) For each sample i, compute fraction of positions > min_value
@@ -44,7 +70,7 @@ def run_label_analysis():
         for unique_label in labels[label_col].unique():
             idx = labels[labels[label_col] == unique_label].index
 
-            if len(idx) < 10:
+            if len(idx) < min_count:
                 # No samples have this label => skip
                 continue
 
@@ -222,13 +248,13 @@ if "layer" not in st.session_state:
 # 5. Button to plot the heatmap
 if st.button("Plot Heatmap") or st.session_state.data is not None:
     # In column 1: generate and show a plot
-    st.session_state.data = load_dataset(dataset_name, label_column, label_value, reverse_filter, layer=layer)[:data_limit]
+    st.session_state.data = normalize_matrix_to_percentage(load_dataset(dataset_name, label_column, label_value, reverse_filter, layer=layer)[:data_limit])
 
     # Access stored data
     data = st.session_state.data
 
     # 3. Determine min/max of the data, for slider guidance
-    data_min, data_max = np.percentile(data, 0.5), np.percentile(data, 99.5)  # 5000, 8000
+    data_min, data_max = np.percentile(data, 0.3), np.percentile(data, 99.7)  # 5000, 8000
     data_minm, data_maxm = np.percentile(data, 0), np.percentile(data, 100)
 
     st.write(f"**Selected dataset**: {dataset_name} — shape: {data.shape}")
@@ -257,7 +283,8 @@ if st.button("Plot Heatmap") or st.session_state.data is not None:
             st.warning("vmin is greater than vmax. Please adjust the sliders.")
         else:
             fig = px.imshow(
-                data,
+                data, # [:, 1400:]
+                #x=list(range(1400, data.shape[1])),
                 zmin=vmin,
                 zmax=vmax,
                 color_continuous_scale="RdBu_r",
@@ -296,6 +323,15 @@ if st.button("Plot Heatmap") or st.session_state.data is not None:
             step=1,
             help="Neuron index you want to analyze"
         )
+
+        min_count = st.number_input(
+            label="Min Number of Data Points",
+            min_value=0,
+            value=0,
+            step=1,
+            help="Minimum number of data points required for the classes to be included in the analysis"
+        )
+
 
         # 2) Numeric input for the activation threshold (min_value)
         min_value = st.number_input(

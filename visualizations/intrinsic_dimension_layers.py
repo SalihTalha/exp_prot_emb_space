@@ -23,7 +23,7 @@ def read_results_filtered():
 def plot_ankh(ankh_res, filtered=False):
     # Plotting the array
     plt.plot(ankh_res)
-    plt.title(f"ID through layers (ANKH)" + " filtered" if filtered else "")
+    plt.title(f"Intrinsic Dimension of the ANKH Model")
     plt.xlabel("Layers")
     plt.ylabel("Intrinsic Dimension")
     plt.grid(True)
@@ -37,7 +37,7 @@ def plot_ankh(ankh_res, filtered=False):
 def plot_protgpt2(protgpt2_res, filtered=False):
     # Plotting the array
     plt.plot(protgpt2_res)
-    plt.title("ID through layers (ProtGPT2)" + " filtered" if filtered else "")
+    plt.title("Intrinsic Dimension of the ProtGPT2 Model")
     plt.xlabel("Layers")
     plt.ylabel("Intrinsic Dimension")
     plt.grid(True)
@@ -51,7 +51,7 @@ def plot_protgpt2(protgpt2_res, filtered=False):
 def plot_esm2(esm2_res, filtered=False):
     # Plotting the array
     plt.plot(esm2_res)
-    plt.title("ID through layers (ESM2)" + " filtered" if filtered else "")
+    plt.title("Intrinsic Dimension of the ESM2 Model")
     plt.xlabel("Layers")
     plt.ylabel("Intrinsic Dimension")
     plt.grid(True)
@@ -87,6 +87,19 @@ def plot_all():
 def plot_all_filtered():
     ankh_res, protgpt2_res, esm2_res = read_results_filtered()
 
-    plot_ankh(ankh_res, True)
-    plot_protgpt2(protgpt2_res, True)
-    plot_esm2(esm2_res, True)
+    # plot_ankh(ankh_res, True)
+    # plot_protgpt2(protgpt2_res, True)
+    # plot_esm2(esm2_res, True)
+
+    plt.plot(ankh_res, label="ANKH")
+    plt.plot(esm2_res, label="ESM2")
+    plt.plot(protgpt2_res, label="ProtGPT2")
+    # Add labels and a legend
+    plt.title('Intrinsic Dimensions Across Layers')
+    plt.xlabel('Layers')
+    plt.ylabel('Intrinsic Dimension')
+    plt.legend(title='Model')
+    plt.grid(True)
+
+    # Show the plot
+    plt.savefig("results/intrinsic_dimension/layers/all_filtered.png")

@@ -59,6 +59,11 @@
 #
 # plot_all()
 
+# from visualizations.intrinsic_dimension_layers import plot_all_filtered
+#
+# plot_all_filtered()
+
+
 # Grandmother cells for different models/layers/labels
 # from visualizations.grandmother_cells_all import run_all
 #
@@ -71,6 +76,18 @@
 # run_all()
 
 
+
+# from visualizations.tsne import run_all
+#
+# run_all()
+
+
+# from visualizations.similarity import run_all_w_real_distance
+#
+# run_all_w_real_distance()
+
+
+
 # from calculations.pca import run_all
 #
 # run_all()
@@ -80,6 +97,19 @@
 #
 # run_all()
 
+
+# from visualizations.pca import run_all
+#
+# run_all()
+
+
+# from visualizations.pca_colored import run_all
+#
+# run_all()
+
+# from visualizations.distance_hist_emb_color import run_all
+#
+# run_all()
 
 # from visualizations.scree_plot import run_all
 #
